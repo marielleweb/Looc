@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Immunization Record</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .calendar-container {
+            background: #ffffff;
+            width: 450px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .calendar-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .calendar-navigation span {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .calendar-body {
+            padding: 20px;
+        }
+
+        .calendar-weekdays, .calendar-dates {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7 columns for the days of the week */
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .calendar-weekdays li {
+            font-weight: bold;
+            color: #4CAF50;
+            padding: 10px;
+        }
+
+        .calendar-dates {
+            gap: 10px; /* Space between date boxes */
+        }
+
+        .calendar-dates li {
+            background: #e9ecef;
+            border-radius: 5px;
+            padding: 10px; /* Reduced padding for smaller boxes */
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 1.5rem;
+            height: 50px; /* Fixed height for uniformity */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ensure that empty cells are also styled */
+        .calendar-dates li.empty {
+            background: transparent; /* Make empty cells transparent */
+            cursor: default; /* Disable pointer cursor for empty cells */
+        }
+
+        .calendar-dates li:hover {
+            background: #d1e7dd; /* Light green on hover */
+        }
+
+        @media (max-width: 600px) {
+            .calendar-dates li {
+                font-size: 1.2rem; /* Smaller font size for mobile */
+                height: 40px; /* Adjust height for mobile */
+            }
+        }
+
+        .modal, .receipt-modal, .slideshow-modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content, .receipt-content, .slideshow-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .input-field {
+            margin-bottom: 10px;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .congrats-message {
+            display: none; /* Hidden by default */
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar-container">
+        <header>
+            <h2>Baby Immunization Calendar</h2>
+            <div class="input-field">
+                <input type="text" id="baby-name" placeholder="Baby's Name" required>
+            </div>
+            <div class="input-field">
+                <input type="date" id="baby-birthdate" placeholder="Baby's Birthdate" required>
+            </div>
+            <div class="calendar-navigation">
+                <span id="calendar-prev">&#10094;</span>
+                <span class="calendar-current-date"></span>
+                <span id="calendar-next">&#10095;</span>
+            </div>
+        </header>
+        <div class="calendar-body">
+            <ul class="calendar-weekdays">
+                <li>Sun</li>
+                <li>Mon</li>
+                <li>Tue</li>
+                <li>Wed</li>
+                <li>Thu</li>
+                <li>Fri</li>
+                <li>Sat</li>
+            </ul>
+            <ul class="calendar-dates"></ul>
+        </div>
+        <button id="submit-button">Submit</button>
+        <div class="congrats-message" id="congrats-message">Congrats! Let's meet again for the next schedule!</div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Select Injection Type</h2>
+            <select id="injection-type">
+                <option value="bcg">BCG</option>
+                <option value="hepatitis-b">Hepatitis B</option>
+                <option value="diphtheria">Diphtheria</option>
+                <option value="tetanus">Tetanus</option>
+                <option value="pertussis">Pertussis</option>
+                <option value="polio">Polio</option>
+                <option value="measles">Measles</option>
+                <option value="mumps">Mumps</option>
+                <option value="rubella">Rubella</option>
+            </select>
+            <h3>Select Dose</h3>
+            <select id="dose-number">
+                <option value="1">1st Dose</option>
+                <option value="2">2nd Dose</option>
+                <option value="3">3rd Dose</option>
+            </select>
+            <button onclick="addVaccination()">Add Vaccination</button>
+            <p id="modal-date" style="display:none;"></p>
+        </div>
+    </div>
+
+    <div id="receipt-modal" class="receipt-modal">
+        <div class="receipt-content">
+            <span class="close" onclick="closeReceiptModal()">&times;</span>
+            <h2>Vaccination Receipt</h2>
+            <p id="receipt-baby-name"></p>
+            <p id="receipt-baby-birthdate"></p>
+            <ul id="vaccination-receipt"></ul>
+            <button onclick="openSlideshow()">View Slideshow</button>
+        </div>
+    </div>
+
+    <div id="slideshow-modal" class="slideshow-modal">
+        <div class="slideshow-content">
+            <span class="close" onclick="closeSlideshowModal()">&times;</span>
+            <h2>Vaccination Slideshow</h2>
+            <div id="slideshow-content"></div>
+            <button id="prev-button" onclick="showPrevious()">Previous</button>
+            <button id="next-button" onclick="showNext()">Next</button>
+        </div>
+    </div>
+
+    <script>
+        const calendarDates = document.querySelector('.calendar-dates');
+        const currentDate = document.querySelector('.calendar-current-date');
+        const modal = document.getElementById('modal');
+        const receiptModal = document.getElementById('receipt-modal');
+        const vaccinationReceipt = document.getElementById('vaccination-receipt');
+        const slideshowModal = document.getElementById('slideshow-modal');
+        const slideshowContent = document.getElementById('slideshow-content');
+        const babyNameInput = document.getElementById('baby-name');
+        const babyBirthdateInput = document.getElementById('baby-birthdate');
+        const submitButton = document.getElementById('submit-button');
+        const congratsMessage = document.getElementById('congrats-message');
+        let vaccinations = [];
+        let year = new Date().getFullYear();
+        let month = new Date().getMonth();
+        let currentSlideIndex = 0;
+
+        const vaccinationColors = {
+            "bcg": "green",
+            "hepatitis-b": "blue",
+            "diphtheria": "orange",
+            "tetanus": "red",
+            "pertussis": "purple",
+            "polio": "yellow",
+            "measles": "pink",
+            "mumps": "cyan",
+            "rubella": "magenta"
+        };
+
+        function renderCalendar() {
+            currentDate.textContent = `${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year}`;
+            calendarDates.innerHTML = '';
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                calendarDates.innerHTML += '<li class="empty"></li>';
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = `${year}-${month + 1}-${day}`;
+                const completedClass = vaccinations.find(v => `${v.date}` === key) ? 'completed' : '';
+                const color = vaccinations.find(v => `${v.date}` === key) ? vaccinationColors[vaccinations.find(v => `${v.date}` === key).type] : '#e9ecef';
+                calendarDates.innerHTML += `<li class="${completedClass}" style="background-color: ${color};" onclick="openModal(${day})">${day}</li>`;
+            }
+        }
+
+        function openModal(day) {
+            modal.style.display = "block";
+            document.getElementById("modal-date").innerText = `Date: ${day}/${month + 1}/${year}`;
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        function addVaccination() {
+            const injectionType = document.getElementById("injection-type").value;
+            const doseNumber = document.getElementById("dose-number").value;
+            const date = document.getElementById("modal-date").innerText.split(": ")[1];
+            const key = `${year}-${month + 1}-${date.split('/')[0]}`;
+
+            vaccinations.push({ date: key, type: injectionType, dose: doseNumber });
+            closeModal();
+            renderReceipt();
+            renderCalendar();
+        }
+
+        function renderReceipt() {
+            const babyName = babyNameInput.value;
+            const babyBirthdate = babyBirthdateInput.value;
+            document.getElementById("receipt-baby-name").innerText = `Baby's Name: ${babyName}`;
+            document.getElementById("receipt-baby-birthdate").innerText = `Birthdate: ${babyBirthdate}`;
+            vaccinationReceipt.innerHTML = '';
+            vaccinations.forEach(vaccination => {
+                vaccinationReceipt.innerHTML += `<li>${vaccination.date}: ${vaccination.type} - ${vaccination.dose}</li>`;
+            });
+            receiptModal.style.display = "block";
+        }
+
+        function closeReceiptModal() {
+            receiptModal.style.display = "none";
+        }
+
+        function openSlideshow() {
+            if (vaccinations.length > 0) {
+                currentSlideIndex = 0;
+                renderSlideshow();
+                slideshowModal.style.display = "block";
+            }
+        }
+
+        function renderSlideshow() {
+            const content = vaccinations[currentSlideIndex];
+            slideshowContent.innerHTML = `
+                <p>Date: ${content.date}</p>
+                <p>Type: ${content.type}</p>
+                <p>Dose: ${content.dose}</p>
+            `;
+        }
+
+        function showNext() {
+            if (currentSlideIndex < vaccinations.length - 1) {
+                currentSlideIndex++;
+                renderSlideshow();
+            }
+        }
+
+        function showPrevious() {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                renderSlideshow();
+            }
+        }
+
+        function closeSlideshowModal() {
+            slideshowModal.style.display = "none";
+        }
+
+        document.getElementById('calendar-prev').onclick = function() {
+            month--;
+            if (month < 0) {
+                month = 11;
+                year--;
+            }
+            renderCalendar();
+        };
+
+        document.getElementById('calendar-next').onclick = function() {
+            month++;
+            if (month > 11) {
+                month = 0;
+                year++;
+            }
+            renderCalendar();
+        };
+
+        // Add event listener for the submit button
+        submitButton.addEventListener('click', function() {
+            // Display the congratulatory message
+            congratsMessage.style.display = "block";
+        });
+
+        renderCalendar();
+    </script>
+</body>
+</html>
